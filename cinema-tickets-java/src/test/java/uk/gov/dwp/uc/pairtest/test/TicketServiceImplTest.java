@@ -1,4 +1,5 @@
 package uk.gov.dwp.uc.pairtest.test;
+
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
@@ -25,128 +26,133 @@ import uk.gov.dwp.uc.pairtest.laboratory.TicketLaboratory;
 import uk.gov.dwp.uc.pairtest.laboratory.TicketLaboratoryImpl;
 
 public class TicketServiceImplTest {
-	
-	 private TicketService ticketService;
-	    private TicketPaymentService ticketPaymentService;
-	    private SeatReservationService seatReservationService;
 
-	    private static final Long accountId = (long) 1;
+    private TicketService ticketService;
+    private TicketPaymentService ticketPaymentService;
+    private SeatReservationService seatReservationService;
 
-	    @BeforeEach
-	    public void setUp() {
-	        ticketPaymentService = Mockito.mock(TicketPaymentService.class);
-	        seatReservationService = Mockito.mock(SeatReservationService.class);
-	        TicketLaboratory ticketLaboratory = new TicketLaboratoryImpl();
+    private static final Long accountId = (long) 1;
 
-	        ticketService = new TicketServiceImpl(ticketPaymentService, seatReservationService, ticketLaboratory);
-	    }
+    @BeforeEach
+    public void setUp() {
+        // Create mock objects for dependencies
+        ticketPaymentService = Mockito.mock(TicketPaymentService.class);
+        seatReservationService = Mockito.mock(SeatReservationService.class);
+        TicketLaboratory ticketLaboratory = new TicketLaboratoryImpl();
 
-	    @ParameterizedTest
-	    @ValueSource(longs = { Long.MIN_VALUE, -10, -1, 0 })
-	    public void invalidAccountIdThrowsException(Long accountId) {
-	        Exception exception = assertThrows(InvalidPurchaseException.class, () -> {
-	            ticketService.purchaseTickets(accountId, new TicketTypeRequest(Type.ADULT, 1));
-	        });
+        // Initialize the TicketService with mock dependencies
+        ticketService = new TicketServiceImpl(ticketPaymentService, seatReservationService, ticketLaboratory);
+    }
 
-	        String expectedMessage = "AccountId must be greater than 0";
-	        String actualMessage = exception.getMessage();
+    @ParameterizedTest
+    @ValueSource(longs = { Long.MIN_VALUE, -10, -1, 0 })
+    public void invalidAccountIdThrowsException(Long accountId) {
+        // Validate that invalid account IDs throw an exception with the correct message
+        Exception exception = assertThrows(InvalidPurchaseException.class, () -> {
+            ticketService.purchaseTickets(accountId, new TicketTypeRequest(Type.ADULT, 1));
+        });
 
-	        assertTrue(actualMessage.contentEquals(expectedMessage));
-	    }
+        String expectedMessage = "AccountId must be greater than 0";
+        String actualMessage = exception.getMessage();
 
-	    @Test
-	    public void overMaximumTicketsThrowsException() {
-	        List<TicketTypeRequest> requests = new ArrayList<TicketTypeRequest>();
-	        int maxNumberOfTickets = 20;
+        assertTrue(actualMessage.contentEquals(expectedMessage));
+    }
 
-	        for (int i = 0; i <= maxNumberOfTickets; i++) {
-	            requests.add(new TicketTypeRequest(Type.ADULT, 1));
-	        }
+    @Test
+    public void overMaximumTicketsThrowsException() {
+        // Validate that attempting to purchase more than the maximum allowed tickets throws an exception
+        List<TicketTypeRequest> requests = new ArrayList<TicketTypeRequest>();
+        int maxNumberOfTickets = 20;
 
-	        Exception exception = assertThrows(InvalidPurchaseException.class, () -> {
-	            ticketService.purchaseTickets(accountId, requests.toArray(new TicketTypeRequest[requests.size()]));
-	        });
+        for (int i = 0; i <= maxNumberOfTickets; i++) {
+            requests.add(new TicketTypeRequest(Type.ADULT, 1));
+        }
 
-	        String expectedMessage = String.format("You can't purchase more than %s tickets", maxNumberOfTickets);
-	        String actualMessage = exception.getMessage();
+        Exception exception = assertThrows(InvalidPurchaseException.class, () -> {
+            ticketService.purchaseTickets(accountId, requests.toArray(new TicketTypeRequest[requests.size()]));
+        });
 
-	        assertTrue(actualMessage.contentEquals(expectedMessage));
-	    }
+        String expectedMessage = String.format("You can't purchase more than %s tickets", maxNumberOfTickets);
+        String actualMessage = exception.getMessage();
 
-	    @Test
-	    public void noAdultTicketThrowsException() {
-	        Exception exception = assertThrows(InvalidPurchaseException.class, () -> {
-	            ticketService.purchaseTickets(accountId, new TicketTypeRequest(Type.CHILD, 1),
-	                    new TicketTypeRequest(Type.INFANT, 1));
-	        });
+        assertTrue(actualMessage.contentEquals(expectedMessage));
+    }
 
-	        String expectedMessage = "Minimum 1 adult ticket is required";
-	        String actualMessage = exception.getMessage();
+    @Test
+    public void noAdultTicketThrowsException() {
+        // Validate that attempting to purchase without any adult tickets throws an exception
+        Exception exception = assertThrows(InvalidPurchaseException.class, () -> {
+            ticketService.purchaseTickets(accountId, new TicketTypeRequest(Type.CHILD, 1),
+                    new TicketTypeRequest(Type.INFANT, 1));
+        });
 
-	        assertTrue(actualMessage.contentEquals(expectedMessage));
-	    }
-	    
-	    @ParameterizedTest
-	    @ValueSource(ints = { Integer.MIN_VALUE, -10, -1 })
-	    public void invalidNoOfTicketsThrowsException(int noOfTickets) {
-	        Exception exception = assertThrows(InvalidPurchaseException.class, () -> {
-	            ticketService.purchaseTickets(accountId, new TicketTypeRequest(Type.ADULT, noOfTickets));
-	        });
+        String expectedMessage = "Minimum 1 adult ticket is required";
+        String actualMessage = exception.getMessage();
 
-	        String expectedMessage = "Invalid number of tickets";
-	        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contentEquals(expectedMessage));
+    }
 
-	        assertTrue(actualMessage.contentEquals(expectedMessage));
-	    }
+    @ParameterizedTest
+    @ValueSource(ints = { Integer.MIN_VALUE, -10, -1 })
+    public void invalidNoOfTicketsThrowsException(int noOfTickets) {
+        // Validate that attempting to purchase with an invalid number of tickets throws an exception
+        Exception exception = assertThrows(InvalidPurchaseException.class, () -> {
+            ticketService.purchaseTickets(accountId, new TicketTypeRequest(Type.ADULT, noOfTickets));
+        });
 
-	    @ParameterizedTest
-	    @MethodSource("getPaymentAmountTestData")
-	    public void requestsPaymentWithCorrectAmount(TicketTypeRequest[] requests, int expectedAmount) {
-	        ticketService.purchaseTickets(accountId, requests);
+        String expectedMessage = "Invalid number of tickets";
+        String actualMessage = exception.getMessage();
 
-	        verify(ticketPaymentService).makePayment(accountId, expectedAmount);
-	    }
+        assertTrue(actualMessage.contentEquals(expectedMessage));
+    }
 
-	    @ParameterizedTest
-	    @MethodSource("getSeatNumberTestData")
-	    public void requestsSeatsWithCorrectNumber(TicketTypeRequest[] requests, int expectedNumber) {
-	        ticketService.purchaseTickets(accountId, requests);
+    @ParameterizedTest
+    @MethodSource("getPaymentAmountTestData")
+    public void requestsPaymentWithCorrectAmount(TicketTypeRequest[] requests, int expectedAmount) {
+        // Validate that the payment service is called with the correct amount
+        ticketService.purchaseTickets(accountId, requests);
 
-	        verify(seatReservationService).reserveSeat(accountId, expectedNumber);
-	    }
+        verify(ticketPaymentService).makePayment(accountId, expectedAmount);
+    }
 
-	    private static Stream<Arguments> getPaymentAmountTestData() {
-	        return Stream.of(Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1) }, 20),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2) }, 40),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1),
-	                        new TicketTypeRequest(Type.CHILD, 3) }, 50),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1),
-	                        new TicketTypeRequest(Type.INFANT, 1) }, 20),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2),
-	                        new TicketTypeRequest(Type.CHILD, 2) }, 60),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2),
-	                        new TicketTypeRequest(Type.INFANT, 2) }, 40),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 4), 
-	                		new TicketTypeRequest(Type.CHILD, 3), new TicketTypeRequest(Type.INFANT, 3) }, 110));
-	        
-	    }
+    @ParameterizedTest
+    @MethodSource("getSeatNumberTestData")
+    public void requestsSeatsWithCorrectNumber(TicketTypeRequest[] requests, int expectedNumber) {
+        // Validate that the seat reservation service is called with the correct number of seats
+        ticketService.purchaseTickets(accountId, requests);
 
-	    private static Stream<Arguments> getSeatNumberTestData() {
-	        return Stream.of(Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1) }, 1),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2) }, 2),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1),
-	                        new TicketTypeRequest(Type.CHILD, 3) }, 4),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1),
-	                        new TicketTypeRequest(Type.INFANT, 2) }, 1),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2),
-	                        new TicketTypeRequest(Type.CHILD, 2) }, 4),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2),
-	                        new TicketTypeRequest(Type.INFANT, 3) }, 2),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 4), 
-	                		new TicketTypeRequest(Type.CHILD, 3), new TicketTypeRequest(Type.INFANT, 3) }, 7));
-	        
-	    }
+        verify(seatReservationService).reserveSeat(accountId, expectedNumber);
+    }
 
-	
+    private static Stream<Arguments> getPaymentAmountTestData() {
+        return Stream.of(Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1) }, 20),
+                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2) }, 40),
+                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1),
+                        new TicketTypeRequest(Type.CHILD, 3) }, 50),
+                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1),
+                        new TicketTypeRequest(Type.INFANT, 1) }, 20),
+                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2),
+                        new TicketTypeRequest(Type.CHILD, 2) }, 60),
+                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2),
+                        new TicketTypeRequest(Type.INFANT, 2) }, 40),
+                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 4), 
+                		new TicketTypeRequest(Type.CHILD, 3), new TicketTypeRequest(Type.INFANT, 3) }, 110));
+        
+    }
 
+    private static Stream<Arguments> getSeatNumberTestData() {
+        return Stream.of(Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1) }, 1),
+                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2) }, 2),
+                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1),
+                        new TicketTypeRequest(Type.CHILD, 3) }, 4),
+                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1),
+                        new TicketTypeRequest(Type.INFANT, 2) }, 1),
+                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2),
+                        new TicketTypeRequest(Type.CHILD, 2) }, 4),
+                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2),
+                        new TicketTypeRequest(Type.INFANT, 3) }, 2),
+                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 4), 
+                		new TicketTypeRequest(Type.CHILD, 3), new TicketTypeRequest(Type.INFANT, 3) }, 7));
+        
+    }
 }
