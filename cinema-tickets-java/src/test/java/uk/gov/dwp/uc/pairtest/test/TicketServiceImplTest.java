@@ -21,6 +21,8 @@ import uk.gov.dwp.uc.pairtest.TicketServiceImpl;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest.Type;
 import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
+import uk.gov.dwp.uc.pairtest.laboratory.TicketLaboratory;
+import uk.gov.dwp.uc.pairtest.laboratory.TicketLaboratoryImpl;
 
 public class TicketServiceImplTest {
 	
@@ -34,8 +36,9 @@ public class TicketServiceImplTest {
 	    public void setUp() {
 	        ticketPaymentService = Mockito.mock(TicketPaymentService.class);
 	        seatReservationService = Mockito.mock(SeatReservationService.class);
+	        TicketLaboratory ticketLaboratory = new TicketLaboratoryImpl();
 
-	        ticketService = new TicketServiceImpl(ticketPaymentService, seatReservationService);
+	        ticketService = new TicketServiceImpl(ticketPaymentService, seatReservationService, ticketLaboratory);
 	    }
 
 	    @ParameterizedTest
@@ -114,28 +117,34 @@ public class TicketServiceImplTest {
 
 	    private static Stream<Arguments> getPaymentAmountTestData() {
 	        return Stream.of(Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1) }, 20),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 3) }, 60),
+	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2) }, 40),
 	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1),
-	                        new TicketTypeRequest(Type.CHILD, 1) }, 30),
+	                        new TicketTypeRequest(Type.CHILD, 3) }, 50),
 	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1),
 	                        new TicketTypeRequest(Type.INFANT, 1) }, 20),
 	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2),
 	                        new TicketTypeRequest(Type.CHILD, 2) }, 60),
 	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2),
-	                        new TicketTypeRequest(Type.INFANT, 2) }, 40));
+	                        new TicketTypeRequest(Type.INFANT, 2) }, 40),
+	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 4), 
+	                		new TicketTypeRequest(Type.CHILD, 3), new TicketTypeRequest(Type.INFANT, 3) }, 110));
+	        
 	    }
 
 	    private static Stream<Arguments> getSeatNumberTestData() {
 	        return Stream.of(Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1) }, 1),
-	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 3) }, 3),
+	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2) }, 2),
 	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1),
-	                        new TicketTypeRequest(Type.CHILD, 1) }, 2),
+	                        new TicketTypeRequest(Type.CHILD, 3) }, 4),
 	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 1),
-	                        new TicketTypeRequest(Type.INFANT, 1) }, 1),
+	                        new TicketTypeRequest(Type.INFANT, 2) }, 1),
 	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2),
 	                        new TicketTypeRequest(Type.CHILD, 2) }, 4),
 	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 2),
-	                        new TicketTypeRequest(Type.INFANT, 2) }, 2));
+	                        new TicketTypeRequest(Type.INFANT, 3) }, 2),
+	                Arguments.of(new TicketTypeRequest[] { new TicketTypeRequest(Type.ADULT, 4), 
+	                		new TicketTypeRequest(Type.CHILD, 3), new TicketTypeRequest(Type.INFANT, 3) }, 7));
+	        
 	    }
 
 	

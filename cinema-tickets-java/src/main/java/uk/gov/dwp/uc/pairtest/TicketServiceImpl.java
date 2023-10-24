@@ -1,25 +1,29 @@
 package uk.gov.dwp.uc.pairtest;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import thirdparty.paymentgateway.TicketPaymentService;
 import thirdparty.seatbooking.SeatReservationService;
+import uk.gov.dwp.uc.pairtest.domain.CinemaPass;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest.Type;
 import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
+import uk.gov.dwp.uc.pairtest.laboratory.TicketLaboratory;
 
 public class TicketServiceImpl implements TicketService {
 	private static final int _maximumNumberOfTickets = 20;
-	private static final int ADULT_TICKET_PRICE = 20;
-	private static final int CHILD_TICKET_PRICE = 10;
 
     private TicketPaymentService ticketPaymentService;
     private SeatReservationService seatReservationService;
+    private TicketLaboratory ticketLaboratory;
 
     public TicketServiceImpl( TicketPaymentService ticketPaymentService,
-            SeatReservationService seatReservationService) {
+            SeatReservationService seatReservationService, TicketLaboratory ticketLaboratory ) {
         this.ticketPaymentService = ticketPaymentService;
         this.seatReservationService = seatReservationService;
+        this.ticketLaboratory = ticketLaboratory;
     }
     /**
      * Should only have private methods other than the one below.
@@ -29,10 +33,16 @@ public class TicketServiceImpl implements TicketService {
     public void purchaseTickets(Long accountId, TicketTypeRequest... ticketTypeRequests) throws InvalidPurchaseException {
     	validateInputs(accountId, ticketTypeRequests);
 
-    	int[] tickets = processPurchase(ticketTypeRequests);
+    	List<CinemaPass> tickets = processPurchase(ticketTypeRequests);
 
-        int numberOfSeats = tickets[0];
-        int totalPrice = tickets[1];
+        int totalPrice = 0;
+        int numberOfSeats = 0;
+
+        for (CinemaPass ticket : tickets) {
+        	totalPrice += ticket.getPrice();
+        	numberOfSeats += ticket.getNoSeats();
+        }
+
         
 
         ticketPaymentService.makePayment(accountId, totalPrice);
@@ -82,28 +92,15 @@ public class TicketServiceImpl implements TicketService {
     }
 
 
-    private int[] processPurchase(TicketTypeRequest... ticketTypeRequests) {
-        int adultTicketCount = 0;
-        int childTicketCount = 0;
-        int totalPrice = 0;
+    private List<CinemaPass> processPurchase(TicketTypeRequest... ticketTypeRequests) {
+    	List<CinemaPass> tickets = new ArrayList<CinemaPass>();
 
         for (TicketTypeRequest ticketTypeRequest : ticketTypeRequests) {
-            switch (ticketTypeRequest.getTicketType()) {
-                case INFANT:
-                    // Infants do not pay for tickets, so we can ignore them.
-                    break;
-                case CHILD:
-                    childTicketCount += ticketTypeRequest.getNoOfTickets();
-                    totalPrice += ticketTypeRequest.getNoOfTickets() * CHILD_TICKET_PRICE;
-                    break;
-                case ADULT:
-                    adultTicketCount += ticketTypeRequest.getNoOfTickets();
-                    totalPrice += ticketTypeRequest.getNoOfTickets() * ADULT_TICKET_PRICE;
-                    break;
+            for (int i = 0; i < ticketTypeRequest.getNoOfTickets(); i++) {
+                tickets.add(ticketLaboratory.generateCinemaTicket(ticketTypeRequest.getTicketType()));
             }
         }
 
-        int[] tickets = new int[]{adultTicketCount + childTicketCount, totalPrice};
         return tickets; 
     }
 }
