@@ -48,7 +48,7 @@ public class TicketServiceImpl implements TicketService {
 
     private void validateAccountId(Long accountId) {
         if (accountId <= 0) {
-            throw new InvalidPurchaseException();
+            throw new InvalidPurchaseException("AccountId must be greater than 0");
         }
     }
 
@@ -57,7 +57,7 @@ public class TicketServiceImpl implements TicketService {
                 .anyMatch(request -> request.getTicketType() == Type.ADULT);
 
         if (!hasAdultTicketRequests) {
-            throw new InvalidPurchaseException();
+            throw new InvalidPurchaseException("Minimum 1 adult ticket is required");
         }
     }
 
@@ -66,7 +66,7 @@ public class TicketServiceImpl implements TicketService {
                 .anyMatch(request -> request.getNoOfTickets() < 0);
 
         if (isInvalidNumberOfTickets) {
-            throw new InvalidPurchaseException();
+            throw new InvalidPurchaseException("Invalid number of tickets");
         }
     }
 
@@ -76,7 +76,8 @@ public class TicketServiceImpl implements TicketService {
                 .sum();
 
         if (totalTicketCount > _maximumNumberOfTickets) {
-            throw new InvalidPurchaseException();
+        	 throw new InvalidPurchaseException(
+                     String.format("You can't purchase more than %s tickets", _maximumNumberOfTickets));
         }
     }
 
