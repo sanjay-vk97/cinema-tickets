@@ -103,6 +103,6 @@ public class TicketServiceImpl implements TicketService {
         }
 
         int[] tickets = new int[]{adultTicketCount + childTicketCount, totalPrice};
-        return tickets;
+        return tickets; 
     }
 }
